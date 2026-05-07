@@ -1,4 +1,7 @@
 import express from 'express';
+import {query, validationResult, body,matchedData , checkSchema} from "express-validator";
+
+import { createValidationSchema } from './src/utils/validationSchema.mjs';
 
 const app = express()
 
@@ -39,7 +42,10 @@ app.get("/",// (req, res, next )=> { console.log('BASE URL 1') next();}, (req, r
  (req,res) =>{ res.status(201).send({msg:"hello"});
 })
 
-app.get("/api/users", (req, res) => {
+app.get("/api/users", query('filter').isString().notEmpty().withMessage("Must not be empty").isLength({min:3, max:10}).withMessage("Must be at least 3-10 characters"), (req, res) => {
+   // console.log(req["express-validator#contexts"]);
+   const resu = validationResult(req);
+   console.log(resu);
     const { filter, value } = req.query;
 
     if (!filter || !value) {
@@ -59,10 +65,23 @@ next();
 })
 */
 
-app.post('/api/users', (req,res ) =>{
-    console.log(req.body);
-    const {body} = req;
-    const newUser = { id: users[users.length-1].id +1, ...body }
+app.post('/api/users', checkSchema(createValidationSchema),
+   // [body('username').notEmpty().withMessage("username cannot be empty").isLength({min:4, max:32}).withMessage("username must be at least 4 characters with a max of 32 characters").isString().withMessage("Username must be string"),
+// body("displayName").notEmpty(), ], 
+(req,res ) =>{
+   
+   //  console.log(req.body);
+
+   const  result = validationResult(req)
+   console.log(result);
+   if(!result.isEmpty())
+    return res.status(400).send({errors:result.array()})
+   
+   const data = matchedData(req)
+  // console.log(data)
+   // const {body} = req;
+
+    const newUser = { id: users[users.length-1].id +1, ...data }
     users.push(newUser);
   return res.status(201).send(newUser)
  
