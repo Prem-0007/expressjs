@@ -8,7 +8,15 @@ const router = Router();
 
 router.get("/api/users", 
  query('filter').isString().notEmpty().withMessage("Must not be empty").isLength({min:3, max:10}).withMessage("Must be at least 3-10 characters"), (req, res) => {
-   
+   console.log(req.session)
+    console.log(req.session.id)
+    console.log(req.sessionStore.get(req.session.id, (err, sessionData) =>{
+        if(err) {
+            console.log(err);
+            throw err;
+        }
+        console.log(sessionData);
+    }))
    const resu = validationResult(req);
    console.log(resu);
     const { filter, value } = req.query;

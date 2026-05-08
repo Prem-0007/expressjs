@@ -2,6 +2,11 @@ import express from 'express';
 
 import routes from "./src/routes/index.mjs"
 import cookieParser from 'cookie-parser';
+import session from 'express-session';
+import passport  from "passport";
+import "./src/strategies/local-strategy.mjs";
+import { users } from "./src/utils/constants.mjs";
+
 /*
 import  userRouter from "./src/routes/users.mjs";
 import productRouter from
@@ -10,7 +15,6 @@ import {query, validationResult, body,matchedData , checkSchema} from "express-v
 
 import { createValidationSchema } from './src/utils/validationSchema.mjs';
 
-import { users} from "./src/utils/constants.mjs"
 import { resolveIndexID } from './src/utils/middlewares.mjs';
 */
 
@@ -18,8 +22,41 @@ const app = express()
 
 app.use(express.json())
 app.use(cookieParser("helloWorld"))
-app.use(routes)
+app.use(session(
+    {
+        secret: "prem the dev",
+        saveUninitialized:
+        false,
+        resave : false,
+        cookie: {
+            maxAge: 60000 * 60 , 
+        }
 
+    }
+))
+app.use(passport.initialize())
+app.use(passport.session())
+app.use(routes)
+app.post('/api/auth', passport.authenticate('local'), (req,res) =>{
+  res.sendStatus(200)
+})
+
+app.get('/api/auth/status', (req,res) =>{
+    console.log(`Inside /auth/status endpoint`)
+    console.log(req.user)
+    console.log(req.session)
+    return req.user ? res.send(req.user) : res.sendStatus(401)
+})
+
+
+app.post('/api/auth/logout' , (req,res) =>{
+    if(!req.user) return res.sendStatus(401)
+
+        req.logOut((err)=>{
+         if(err) return res.sendStatus(400) ;
+         res.send(200)  
+        } )
+})
 //app.use(userRouter)  app.use(productRouter)
 
 /*
@@ -67,11 +104,54 @@ const users = [{id:1, username:"prem", displayName:"Prem"},
 
 app.get("/",// (req, res, next )=> { console.log('BASE URL 1') next();}, (req, res, next )=> { console.log('BASE URL 2')  next()}, (req, res, next )=> {  console.log('BASE URL 3') next();},
  (req,res) =>{ 
+    console.log(req.session)
+    console.log(req.session.id)
+    req.session.visited = true;
     res.cookie("hello", "world", {maxAge: 10000, signed:true});
     
     res.status(201).send({msg:"hello"});
 })
 
+app.post('/api/auth', (req,res) =>{
+    const {body : {
+        username, password
+    }} = req;
+   const findUser = users.find((user) => user.username === username )
+   if(!findUser || findUser.password !== password) return res.status(401).send({msg: "BAD CREDENTIALS"})
+   
+   req.session.user = findUser;
+   return res.status(200).send(findUser);
+})
+
+
+
+app.get('/api/auth/status', (req,res) => {
+    req.sessionStore.get(req.sessionID, (err, session) => {
+        console.log(session)
+    })
+   return req.session.user ? res.status(200).send(req.session.user) : res.status(401).send({msg:"Not Authenticated"})
+})
+
+
+app.post('/api/cart', (req,res) =>{
+    if(!req.session.user) return res.sendStatus(401);
+
+    const { body : item} = req;
+    const { cart} = req.session
+    if(cart){cart.push(item)
+
+    }
+    else{
+        req.session.cart = [item];
+    }
+    return res.status(201).send(item)    
+});
+
+
+app.get('/api/cart', (req,res) =>{
+     if(!req.session.user) return res.sendStatus(401);
+     return res.send(req.session.cart ?? [])
+})
 
 /*
 app.get("/api/users", query('filter').isString().notEmpty().withMessage("Must not be empty").isLength({min:3, max:10}).withMessage("Must be at least 3-10 characters"), (req, res) => {
