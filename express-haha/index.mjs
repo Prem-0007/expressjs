@@ -1,7 +1,7 @@
 import express from 'express';
 
 import routes from "./src/routes/index.mjs"
-
+import cookieParser from 'cookie-parser';
 /*
 import  userRouter from "./src/routes/users.mjs";
 import productRouter from
@@ -17,7 +17,9 @@ import { resolveIndexID } from './src/utils/middlewares.mjs';
 const app = express()
 
 app.use(express.json())
+app.use(cookieParser("helloWorld"))
 app.use(routes)
+
 //app.use(userRouter)  app.use(productRouter)
 
 /*
@@ -64,7 +66,10 @@ const users = [{id:1, username:"prem", displayName:"Prem"},
 
 
 app.get("/",// (req, res, next )=> { console.log('BASE URL 1') next();}, (req, res, next )=> { console.log('BASE URL 2')  next()}, (req, res, next )=> {  console.log('BASE URL 3') next();},
- (req,res) =>{ res.status(201).send({msg:"hello"});
+ (req,res) =>{ 
+    res.cookie("hello", "world", {maxAge: 10000, signed:true});
+    
+    res.status(201).send({msg:"hello"});
 })
 
 
