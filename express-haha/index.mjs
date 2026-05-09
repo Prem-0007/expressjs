@@ -305,14 +305,25 @@ return res.send(200);
 
 */
 
+app.get('/api/auth/discord', passport.authenticate("discord"));
+
+app.get("/api/auth/discord/redirect",
+  passport.authenticate("discord", {
+    failureRedirect: "/",
+  }),
+  (req, res) => {
+    res.json(req.user);
+  }
+);
 
 
+app.get("/profile", (req, res) => {
+  if (!req.user) return res.sendStatus(401);
+  res.json(req.user);
+});
 
 const PORT = process.env.PORT || 3000
 app.listen(PORT, () =>{
     console.log(`server running on port ${PORT}`)
 })
 
-//  client_secret = 26dM-XnK-aJJRMVkRf-kGEuRso5MlFEo
-// client_id = 1502553493431648357
-// redirect_url = http://localhost:3000/api/auth/discord/redirect
