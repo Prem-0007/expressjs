@@ -4,8 +4,11 @@ import routes from "./src/routes/index.mjs"
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
 import passport  from "passport";
-import "./src/strategies/local-strategy.mjs";
+// import "./src/strategies/local-strategy.mjs";
+import mongoose from 'mongoose';
+import MongoStore from "connect-mongo";
 import { users } from "./src/utils/constants.mjs";
+import "./src/strategies/discord-strategy.mjs";
 
 /*
 import  userRouter from "./src/routes/users.mjs";
@@ -20,18 +23,29 @@ import { resolveIndexID } from './src/utils/middlewares.mjs';
 
 const app = express()
 
+
+mongoose.connect('mongodb://localhost/express_haha')
+.then(() => console.log("connected to Database"))
+.catch((err) => console.log(err))
+
+
+
 app.use(express.json())
 app.use(cookieParser("helloWorld"))
 app.use(session(
     {
         secret: "prem the dev",
         saveUninitialized:
-        false,
+        true,
         resave : false,
         cookie: {
             maxAge: 60000 * 60 , 
-        }
-
+        },
+     store: MongoStore.create({
+         client: mongoose.connection.getClient()
+     }
+       
+     )
     }
 ))
 app.use(passport.initialize())
@@ -298,3 +312,7 @@ const PORT = process.env.PORT || 3000
 app.listen(PORT, () =>{
     console.log(`server running on port ${PORT}`)
 })
+
+//  client_secret = 26dM-XnK-aJJRMVkRf-kGEuRso5MlFEo
+// client_id = 1502553493431648357
+// redirect_url = http://localhost:3000/api/auth/discord/redirect

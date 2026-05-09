@@ -3,6 +3,8 @@ import {query , validationResult, checkSchema, matchedData} from "express-valida
 import { users} from "../utils/constants.mjs"
 import { createValidationSchema }   from "../utils/validationSchema.mjs";
 import { resolveIndexID } from "../utils/middlewares.mjs";
+import {User} from "../mongoose/schemas/user.mjs"
+import { hashPassword } from "../utils/helpers.mjs";
 const router = Router();
 
 
@@ -44,10 +46,29 @@ router.get('/api/users/:id', resolveIndexID, (req,res) =>{
 
 
 
-router.post('/api/users', checkSchema(createValidationSchema),
+router.post('/api/users',   checkSchema(createValidationSchema),
 
-(req,res ) =>{
-   
+async (req,res ) =>{
+    
+
+    const result = validationResult(req);
+    if(!result.isEmpty()) return res.status(400).send(result.array())
+    const data = matchedData(req);
+  console.log(data)
+  data.password = hashPassword(data.password)
+  console.log(data);
+   // const {body} = req;
+    const newUser = new User(data);
+    try{ const savedUser = await newUser.save();
+        return res.sendStatus(201).send(savedUser)
+    }
+    catch(err){
+        console.log(err)
+        return res.sendStatus(400)
+    }
+  
+    
+  /* 
    const  result = validationResult(req)
    console.log(result);
    if(!result.isEmpty())
@@ -57,7 +78,7 @@ router.post('/api/users', checkSchema(createValidationSchema),
     const newUser = { id: users[users.length-1].id +1, ...data }
     users.push(newUser);
   return res.status(201).send(newUser)
- 
+ */
 })
 
 
